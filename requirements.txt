@@ -1,3 +1,0 @@
-coloredlogs==10.0
-configparser==4.0.2
-selenium==3.141.0
