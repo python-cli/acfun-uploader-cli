@@ -25,11 +25,9 @@ setup(
     install_requires=[
         'coloredlogs>=10.0',
         'configparser>=4.0.2',
+        'requests>=2.22.0',
         'selenium>=3.141.0',
     ],
-    entry_points={
-        'console_scripts': ['funniest-joke=funniest.command_line:main'],
-    },
     include_package_data=True,
     zip_safe=False
 )

@@ -3,6 +3,7 @@
 
 import os
 from acfun_uploader_cli.config import get_userinfo
+from acfun_uploader_cli.channel import *
 from acfun_uploader_cli.uploader import Acfun
 
 def main():
@@ -24,4 +25,6 @@ def main():
     )
 
 if __name__ == '__main__':
-    main()
+    # main()
+    # fetch_channel_info(True)
+    choose_channel()

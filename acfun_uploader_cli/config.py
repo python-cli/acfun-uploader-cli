@@ -10,6 +10,7 @@ _config = None
 
 CONFIG_FILE = join(_root, 'config')
 COOKIE_FILE = join(_root, 'cookies')
+CHANNEL_FILE = join(_root, 'channels')
 DATABASE_FILE = join(_root, 'data.sqlite3')
 
 _SECTION_USER = 'USER'
