@@ -17,7 +17,7 @@ def main():
 
     acer.check_login() or acer.login()
     acer.upload_video(
-        title='title_abc',
+        title='acfun video poster',
         cover=os.path.expanduser('~/Desktop/test/demo-videos/demo-0001.png'),
         channel=u'生活',
         sub_channel=u'生活日常',
@@ -25,6 +25,6 @@ def main():
     )
 
 if __name__ == '__main__':
-    # main()
+    main()
     # fetch_channel_info(True)
-    choose_channel()
+    # choose_channel()

@@ -6,9 +6,11 @@ from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import NoAlertPresentException
 from .logger import *
 from .config import *
@@ -17,16 +19,19 @@ logger = getLogger(__name__)
 
 class Acfun(object):
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, use_cookie=False):
         super().__init__()
-        self.driver = webdriver.Chrome()
-        self.waiter = WebDriverWait(self.driver, 10)
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        self.driver = webdriver.Chrome(options=chrome_options)
+        self.waiter = WebDriverWait(self.driver, 30)
         self.username = username
         self.password = password
+        self.use_cookie = use_cookie
 
         self.driver.get("https://www.acfun.cn/")
 
-        if os.path.exists(COOKIE_FILE):
+        if use_cookie and os.path.exists(COOKIE_FILE):
             with open(COOKIE_FILE, 'rb') as f:
                 for cookie in pickle.load(f):
                     # Remove the invalid `expiry` key.
@@ -59,9 +64,10 @@ class Acfun(object):
         self.driver.find_element_by_class_name('btn-login').click()
         self.check_login()
 
-        with open(COOKIE_FILE, 'wb') as f:
-            pickle.dump(self.driver.get_cookies(), f)
-        logger.info('Saved the user cookies for reuse')
+        if self.use_cookie:
+            with open(COOKIE_FILE, 'wb') as f:
+                pickle.dump(self.driver.get_cookies(), f)
+            logger.info('Saved the user cookies for reuse')
 
     def check_login(self):
         logger.info('Checking user login status')
@@ -73,6 +79,8 @@ class Acfun(object):
         return result
 
     def upload_video(self, title, cover, channel, sub_channel, video):
+        result = False
+
         logger.info('Start to upload video')
         self.driver.get('https://www.acfun.cn/member/#area=upload-video')
         self.driver.implicitly_wait(5)
@@ -103,11 +111,98 @@ class Acfun(object):
         Select(self.driver.find_element_by_name('subject')).select_by_visible_text(sub_channel)
         self.driver.find_element_by_id('tagator_inputTagator').click()
 
+        logger.info('Input the tags')
+        tagator = self.driver.find_element_by_xpath('//div[@id="tagator_inputTagator"]/input')
+        tagator.click()
+        tagator.send_keys('a')
+        tagator.send_keys(Keys.ENTER)
+        self.wait()
+        tagator.send_keys('b')
+        tagator.send_keys(Keys.ENTER)
+
+        logger.info('Input the descriptions')
+        self.driver.find_element_by_xpath('//*[@id="up-descr"]').send_keys('descriptions')
+
+        self.wait(2)
         logger.info('Uploading video files')
         self.driver.find_element_by_name('file').send_keys(video)
 
-        self.driver.find_element_by_css_selector('#uploadVideo > div.dividers.pos-rel > div > label').click()
-        # self.driver.find_element_by_id("up-submit").click()
+        # self.wait(2)
+        # logger.info('Check the auto-publish switcher')
+        # self.driver.find_element_by_css_selector('#uploadVideo > div.dividers.pos-rel > div > label').click()
+
+        logger.info('Waiting for the upload progress completed')
+        uploding_progress_done, submit_done = False, False
+        last_info_text = None
+
+        while True:
+            if not submit_done:
+                if uploding_progress_done:
+                    self.wait()
+                    self.driver.find_element_by_xpath('//input[@class="ptitles fl"]').send_keys('p1')
+                    self.wait(5)
+                    self.driver.find_element_by_id("up-submit").click()
+                    submit_done = True
+                else:
+                    try:
+                        progress_span = self.driver.find_element_by_xpath('//div[@class="pbox"]/div/span[@class="ptime"]')
+
+                        if progress_span:
+                            progress = progress_span.text
+                            logger.debug('progress: %s' % progress)
+                            uploding_progress_done = progress == '100%'
+                    except NoSuchElementException as e:
+                        pass
+                    except StaleElementReferenceException as e:
+                        pass
+
+            # print and check the notification info.
+            try:
+                info_element = self.driver.find_element_by_xpath('//*[@id="area-info"]/div')
+
+                if info_element:
+                    text = info_element.text
+
+                    if len(text) <= 0:
+                        continue
+                    elif text == last_info_text:
+                        continue
+                    else:
+                        last_info_text = text
+
+                    if 'error' in info_element.get_attribute("class"):
+                        logger.error(text)
+
+                        if u'投稿失败' in text:
+                            result = False
+                            break
+                    else:
+                        logger.info(text)
+            except NoSuchElementException as e:
+                pass
+            except StaleElementReferenceException as e:
+                pass
+
+            try:
+                success_div = self.driver.find_element_by_xpath('//*[@id="videoSuccess"]')
+                if success_div.is_displayed():
+                    logger.info('Uploaded the video successfully.')
+                    result = True
+                    break
+            except NoSuchElementException as e:
+                pass
+
+            if '#area=upload-video' not in self.driver.current_url:
+                logger.info('Page navigated!')
+                # Undefined result!
+                break
+
+            self.wait(0.1)
+
+        logger.info('Finish the uploading')
+        self.wait(5)
+
+        return result
 
     def __del__(self):
         self.driver.close()
