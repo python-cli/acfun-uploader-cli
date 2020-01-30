@@ -1,13 +1,13 @@
 # -*- coding: UTF-8 -*-.
 
 from .config import *
-from .logger import *
 
+import logging
 import os
 import requests
 import json
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 def fetch_channel_info(force_update=False):
     'Fetch the channel info from acfun site.'

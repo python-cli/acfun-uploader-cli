@@ -23,7 +23,6 @@ setup(
     python_requires='>=3',
     packages=['acfun_uploader_cli'],
     install_requires=[
-        'coloredlogs>=10.0',
         'configparser>=4.0.2',
         'requests>=2.22.0',
         'selenium>=3.141.0',

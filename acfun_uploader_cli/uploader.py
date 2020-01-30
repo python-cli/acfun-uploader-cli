@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-.
 
+import logging
 import os, pickle
 from time import sleep
 
@@ -12,17 +13,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import NoAlertPresentException
-from .logger import *
-from .config import *
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class Acfun(object):
 
     def __init__(self, username, password, use_cookie=False):
         super().__init__()
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        __debug__ or chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(options=chrome_options)
         self.waiter = WebDriverWait(self.driver, 30)
         self.username = username
