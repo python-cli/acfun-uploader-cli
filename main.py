@@ -85,6 +85,8 @@ def main():
         cover=os.path.expanduser('~/Desktop/test/demo-videos/demo-0001.png'),
         channel=u'生活',
         sub_channel=u'生活日常',
+        tags=['a', 'b'],
+        descriptions='balabala...',
         video=os.path.expanduser('~/Desktop/test/demo-videos/a.mp4')
     )
 

@@ -77,7 +77,7 @@ class Acfun(object):
         logger.info('Login status: %s' % ('yes' if result else 'no'))
         return result
 
-    def upload_video(self, title, cover, channel, sub_channel, video):
+    def upload_video(self, title, cover, channel, sub_channel, tags, descriptions, video):
         result = False
 
         logger.info('Start to upload video')
@@ -113,14 +113,14 @@ class Acfun(object):
         logger.info('Input the tags')
         tagator = self.driver.find_element_by_xpath('//div[@id="tagator_inputTagator"]/input')
         tagator.click()
-        tagator.send_keys('a')
-        tagator.send_keys(Keys.ENTER)
-        self.wait()
-        tagator.send_keys('b')
-        tagator.send_keys(Keys.ENTER)
+
+        for tag in tags:
+            tagator.send_keys(tag)
+            tagator.send_keys(Keys.ENTER)
+            self.wait()
 
         logger.info('Input the descriptions')
-        self.driver.find_element_by_xpath('//*[@id="up-descr"]').send_keys('descriptions')
+        self.driver.find_element_by_xpath('//*[@id="up-descr"]').send_keys(descriptions)
 
         self.wait(2)
         logger.info('Uploading video files')
