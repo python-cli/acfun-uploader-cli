@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-.
 
-from .config import *
-
 import logging
-import os
 import requests
 import json
+
+from os.path import exists
+from .config import CHANNEL_FILE
 
 logger = logging.getLogger(__name__)
 
