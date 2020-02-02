@@ -43,8 +43,8 @@ class Acfun(object):
             self.driver.refresh()
             self.wait()
 
-    def wait(self, seconds=1):
-        # self.driver.implicitly_wait(seconds)
+    def wait(self, multiplier=1):
+        seconds = multiplier * (5 if __debug__ else 10)
         sleep(seconds)
 
     def login(self):
@@ -102,11 +102,11 @@ class Acfun(object):
 
         logger.info('Select the channel')
         # self.waiter.until(EC.presence_of_element_located((By.NAME, 'channel'))).click()
-        self.wait(5)
+        self.wait(3)
         self.driver.find_element_by_name('channel').click()
         Select(self.driver.find_element_by_name('channel')).select_by_visible_text(channel)
         self.driver.find_element_by_name('subject').click()
-        self.wait()
+        self.wait(3)
         Select(self.driver.find_element_by_name('subject')).select_by_visible_text(sub_channel)
         self.driver.find_element_by_id('tagator_inputTagator').click()
 
@@ -139,7 +139,7 @@ class Acfun(object):
                 if uploding_progress_done:
                     self.wait()
                     self.driver.find_element_by_xpath('//input[@class="ptitles fl"]').send_keys('p1')
-                    self.wait(5)
+                    self.wait(2)
                     self.driver.find_element_by_id("up-submit").click()
                     submit_done = True
                 else:
@@ -196,7 +196,7 @@ class Acfun(object):
                 # Undefined result!
                 break
 
-            self.wait(0.1)
+            self.wait()
 
         logger.info('Finish the uploading')
         self.wait(5)
