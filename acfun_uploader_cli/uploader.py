@@ -71,8 +71,10 @@ class Acfun(object):
     def check_login(self):
         logger.info('Checking user login status')
         self.driver.get('https://www.acfun.cn/member/')
-        self.wait()
+        self.wait(2)
 
+        title = self.driver.title
+        logger.debug('Title: %s', title)
         result = u'登录' not in self.driver.title
         logger.info('Login status: %s' % ('yes' if result else 'no'))
         return result
@@ -81,6 +83,8 @@ class Acfun(object):
         result = False
 
         logger.info('Start to upload video')
+        self.wait()
+
         self.driver.get('https://www.acfun.cn/member/#area=upload-video')
         self.driver.implicitly_wait(5)
 
@@ -115,6 +119,7 @@ class Acfun(object):
         tagator.click()
 
         for tag in tags:
+            logger.debug('Input tag [%s]', tag)
             tagator.send_keys(tag)
             tagator.send_keys(Keys.ENTER)
             self.wait()
@@ -196,7 +201,7 @@ class Acfun(object):
                 # Undefined result!
                 break
 
-            self.wait()
+            # self.wait()
 
         logger.info('Finish the uploading')
         self.wait(5)
@@ -204,5 +209,5 @@ class Acfun(object):
         return result
 
     def __del__(self):
-        self.driver.close()
+        self.driver.quit()
         logger.info('Bye!')
