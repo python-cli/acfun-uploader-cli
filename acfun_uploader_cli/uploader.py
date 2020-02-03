@@ -2,6 +2,7 @@
 
 import logging
 import os, pickle
+import distutils.spawn
 from time import sleep
 
 from selenium import webdriver
@@ -20,9 +21,20 @@ class Acfun(object):
 
     def __init__(self, username, password, use_cookie=False):
         super().__init__()
+        executable = distutils.spawn.find_executable('chromedriver')
+
+        if executable is None:
+            logger.error('chromedriver is required!\n'
+                        'Go to install it first and make sure it could be found in your $PATH.')
+            return
+
+        # https://stackoverflow.com/a/53970825/1677041
         chrome_options = Options()
-        __debug__ or chrome_options.add_argument("--headless")
-        self.driver = webdriver.Chrome(options=chrome_options)
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+
+        self.driver = webdriver.Chrome(executable, options=chrome_options)
         self.waiter = WebDriverWait(self.driver, 30)
         self.username = username
         self.password = password
@@ -46,6 +58,7 @@ class Acfun(object):
     def wait(self, multiplier=1):
         seconds = multiplier * (5 if __debug__ else 10)
         sleep(seconds)
+        # self.driver.implicitly_wait(seconds)
 
     def login(self):
         logger.info('Start to login')
@@ -86,7 +99,7 @@ class Acfun(object):
         self.wait()
 
         self.driver.get('https://www.acfun.cn/member/#area=upload-video')
-        self.driver.implicitly_wait(5)
+        self.wait(5)
 
         logger.info('Fill video title')
         title_element = self.driver.find_element_by_id('title')
