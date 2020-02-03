@@ -150,7 +150,7 @@ class Acfun(object):
 
         logger.info('Waiting for the upload progress completed')
         uploding_progress_done, submit_done = False, False
-        last_info_text = None
+        last_info_text, last_progress = None, None
 
         while True:
             if not submit_done:
@@ -166,8 +166,11 @@ class Acfun(object):
 
                         if progress_span:
                             progress = progress_span.text
-                            logger.debug('progress: %s' % progress)
                             uploding_progress_done = progress == '100%'
+
+                            if len(progress) > 0 and progress != last_progress:
+                                last_progress = progress
+                                logger.info('progress: %s' % progress)
                     except NoSuchElementException as e:
                         pass
                     except StaleElementReferenceException as e:
@@ -188,13 +191,13 @@ class Acfun(object):
                         last_info_text = text
 
                     if 'error' in info_element.get_attribute("class"):
-                        logger.error(text)
+                        logger.error('Received notification: %s', text)
 
                         if u'投稿失败' in text:
                             result = False
                             break
                     else:
-                        logger.info(text)
+                        logger.info('Received notification: %s', text)
             except NoSuchElementException as e:
                 pass
             except StaleElementReferenceException as e:
@@ -210,13 +213,13 @@ class Acfun(object):
                 pass
 
             if '#area=upload-video' not in self.driver.current_url:
-                logger.info('Page navigated!')
+                logger.info('Page navigated to %s!', self.driver.current_url)
                 # Undefined result!
                 break
 
             # self.wait()
 
-        logger.info('Finish the uploading')
+        logger.info('Finish the uploading progress.')
         self.wait(5)
 
         return result
