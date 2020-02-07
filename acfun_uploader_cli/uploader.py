@@ -34,8 +34,11 @@ class Acfun(object):
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
 
+        timeout = 30 if __debug__ else 300
+
         self.driver = webdriver.Chrome(executable, options=chrome_options)
-        self.waiter = WebDriverWait(self.driver, 30)
+        self.driver.set_page_load_timeout(timeout)
+        self.waiter = WebDriverWait(self.driver, timeout)
         self.username = username
         self.password = password
         self.use_cookie = use_cookie
