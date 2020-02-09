@@ -77,7 +77,7 @@ def main():
         logger.warning('Invalid user info for login.')
         return
 
-    acer = Acfun(username, password)
+    acer = Acfun(username, password, headless=False)
 
     acer.check_login() or acer.login()
     acer.upload_video(

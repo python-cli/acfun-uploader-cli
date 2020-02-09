@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Acfun(object):
 
-    def __init__(self, username, password, use_cookie=False):
+    def __init__(self, username, password, headless=True, use_cookie=False):
         super().__init__()
         executable = distutils.spawn.find_executable('chromedriver')
 
@@ -30,7 +30,7 @@ class Acfun(object):
 
         # https://stackoverflow.com/a/53970825/1677041
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        headless and chrome_options.add_argument("--headless")
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
 
@@ -64,7 +64,7 @@ class Acfun(object):
         # self.driver.implicitly_wait(seconds)
 
     def login(self):
-        logger.info('Start to login')
+        logger.info('Start to login with %s', self.username)
         self.driver.get('https://www.acfun.cn/login/')
         self.driver.find_element_by_id('login-switch').click()
 
@@ -106,7 +106,7 @@ class Acfun(object):
         self.driver.get('https://www.acfun.cn/member/#area=upload-video')
         self.wait(5)
 
-        logger.info('Fill video title')
+        logger.info('Fill video title: %s', title)
         title_element = self.waiter.until(EC.presence_of_element_located((By.ID, 'title')))
         title_element.clear()
         title_element.send_keys(title)
@@ -114,7 +114,7 @@ class Acfun(object):
         logger.info('Select the video source type')
         self.driver.find_element_by_css_selector('#uploadVideo > div.up-info.fl > div.up-detail > div.up-type.must > label:nth-child(6)').click()
 
-        logger.info('Upload video cover')
+        logger.info('Upload video cover: %s', cover)
         self.wait()
         self.driver.find_element_by_css_selector('#up-pic > img').click()
         self.wait()
@@ -123,7 +123,7 @@ class Acfun(object):
         self.wait()
         self.driver.find_element_by_id('uploadOk').click()
 
-        logger.info('Select the channel')
+        logger.info('Select the channel: [%s] - [%s]', channel, sub_channel)
         channel_element = self.waiter.until(EC.visibility_of_element_located((By.NAME, 'channel')))
         self.wait()
         # channel_element = self.driver.find_element_by_name('channel').click()
@@ -133,12 +133,13 @@ class Acfun(object):
         Select(subject_element).select_by_visible_text(sub_channel)
 
         logger.info('Input the tags')
-        tagator = self.driver.find_element_by_xpath('//div[@id="tagator_inputTagator"]/input')
-        tagator.click()
+        tagator = self.waiter.until(EC.presence_of_element_located((By.XPATH, '//div[@id="tagator_inputTagator"]/input')))
+        # tagator.click()
+        self.driver.execute_script("arguments[0].click();", tagator)
 
         for i in range(min(4, len(tags))):
             tag = tags[i]
-            logger.debug('Input tag [%s]', tag)
+            logger.info('Tag: [%s]', tag)
             tagator.send_keys(tag)
             tagator.send_keys(Keys.ENTER)
             self.wait()
@@ -149,14 +150,14 @@ class Acfun(object):
         self.driver.find_element_by_xpath('//*[@id="up-descr"]').send_keys(descriptions)
 
         self.wait(2)
-        logger.info('Uploading video files')
+        logger.info('Uploading video file: %s', video)
         self.driver.find_element_by_name('file').send_keys(video)
 
         # self.wait(2)
         # logger.info('Check the auto-publish switcher')
         # self.driver.find_element_by_css_selector('#uploadVideo > div.dividers.pos-rel > div > label').click()
 
-        result = self._wait_upload_complete()
+        result = self._wait_upload_completed()
         self.wait(5)
 
         if result:
@@ -172,7 +173,7 @@ class Acfun(object):
 
         return result
 
-    def _wait_upload_complete(self):
+    def _wait_upload_completed(self):
         logger.info('Waiting for the upload progress completed')
 
         result = False
@@ -188,6 +189,7 @@ class Acfun(object):
 
                 if res:
                     result = True
+                    logger.debug('The uploads should be completed since the progress bar finished.')
                     break
 
             res, text = self._check_notification()
@@ -198,9 +200,11 @@ class Acfun(object):
 
             if res:
                 result = True
+                logger.debug('The uploads should be completed since success notification was received.')
                 break
 
             if self._check_upload_status():
+                logger.debug('The uploads should be completed since it navigates to success page.')
                 result = True
                 break
 
