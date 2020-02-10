@@ -17,7 +17,7 @@ def fetch_channel_info(force_update=False):
 
         if exists(CHANNEL_FILE) and not force_update:
             logger.info('Found existing channel file, reusing it...')
-            return
+            return None
 
         logger.info('Fetching channels')
         response = requests.get(url, headers={
@@ -26,7 +26,7 @@ def fetch_channel_info(force_update=False):
 
         if response.status_code != requests.codes.ok:
             logger.error('Failed to fetch channel with error: %s' % response.text)
-            return
+            return None
 
         res = response.json()
         channels = {}
@@ -39,8 +39,11 @@ def fetch_channel_info(force_update=False):
             json.dump(channels, f, indent=4)
             logger.info('Updated the channel info.')
 
+        return channels
     except requests.RequestException as e:
         logger.exception(e)
+
+    return None
 
 def load_channels():
     'Load and return the local channel info.'
@@ -51,8 +54,7 @@ def load_channels():
 
     return channels
 
-def choose_channel(printer=print):
-    channels = load_channels()
+def print_channels(channels, printer=print):
     message = ''
     number = 0
 
@@ -66,6 +68,27 @@ def choose_channel(printer=print):
         message += '\n'
 
     printer(message)
+    return number
+
+def get_channel(channels, channel_id):
+    if channel_id <= 0 and channel_id > number:
+        return None, None
+
+    chosen_channel, chosen_subchannel = None, None
+
+    for channel, children in channels.items():
+        if channel_id > len(children):
+            channel_id -= len(children)
+        else:
+            chosen_channel = channel
+            chosen_subchannel = children[channel_id - 1]
+            break
+
+    return chosen_channel, chosen_subchannel
+
+def choose_channel(printer=print):
+    channels = load_channels()
+    number = print_channels(channels, printer)
     printer('Please choose one channel: ', end='')
 
     while True:
@@ -79,15 +102,7 @@ def choose_channel(printer=print):
 
         printer('Invalid number, should be in range [1, %d]' % number)
 
-    chosen_channel, chosen_subchannel = None, None
+    chosen_channel, chosen_subchannel = get_channel(channels, chosen_number)
+    printer('You chosen: %s - %s' % (chosen_channel, chosen_subchannel))
 
-    for channel, children in channels.items():
-        if chosen_number > len(children):
-            chosen_number -= len(children)
-        else:
-            chosen_channel = channel
-            chosen_subchannel = children[chosen_number - 1]
-            break
-
-    logger.debug('You chosen: %s - %s' % (chosen_channel, chosen_subchannel))
     return chosen_channel, chosen_subchannel
