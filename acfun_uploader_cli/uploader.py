@@ -4,6 +4,7 @@ import logging
 import os, pickle
 import distutils.spawn
 from time import sleep
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -178,8 +179,13 @@ class Acfun(object):
 
         result = False
         last_info_text, last_progress = None, None
+        start_time = datetime.now()
 
         while True:
+            if (datetime.now() - start_time).days > 1:
+                logger.error('The upload operation time out!')
+                break # timeout
+
             if not result:
                 res, progress = self._check_progress()
 
