@@ -2,7 +2,7 @@
 
 import logging
 import os, pickle
-import distutils.spawn
+from distutils.spawn import find_executable
 from time import sleep
 from datetime import datetime
 
@@ -16,28 +16,57 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import NoAlertPresentException
 
+from selenium.webdriver.firefox.options import Options as FFOptions
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+from pyvirtualdisplay import Display
+
+from .config import *
+
 logger = logging.getLogger(__name__)
 
 class Acfun(object):
 
     def __init__(self, username, password, headless=True, use_cookie=False):
         super().__init__()
-        executable = distutils.spawn.find_executable('chromedriver')
 
-        if executable is None:
+        if should_use_virtual_display():
+            self.display = Display(visible=0, size=(1024, 768))
+            self.display.start()
+
+        executable = find_executable('chromedriver')
+
+        if executable:
+            # https://stackoverflow.com/a/53970825/1677041
+            chrome_options = Options()
+            headless and chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+
+            self.driver = webdriver.Chrome(executable, options=chrome_options)
+        else:
+            ff_entry = find_executable('firefox-esr')
+            executable = find_executable('geckodriver')
+
+            firefox_options = FFOptions()
+            firefox_options.add_argument('--headless')
+
+            binary = FirefoxBinary(ff_entry)
+
+            # https://stackoverflow.com/a/47785513/1677041
+            cap = DesiredCapabilities().FIREFOX
+            cap["marionette"] = False
+
+            self.driver = webdriver.Firefox(executable_path=executable, firefox_options=firefox_options, firefox_binary=binary, capabilities=cap)
+
+        if self.driver is None:
             logger.error('chromedriver is required!\n'
-                        'Go to install it first and make sure it could be found in your $PATH.')
+            'Go to install it first and make sure it could be found in your $PATH.')
             return
 
-        # https://stackoverflow.com/a/53970825/1677041
-        chrome_options = Options()
-        headless and chrome_options.add_argument("--headless")
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
+        timeout = get_timeout_intervals()
 
-        timeout = 30 if __debug__ else 300
-
-        self.driver = webdriver.Chrome(executable, options=chrome_options)
         self.driver.set_page_load_timeout(timeout)
         self.waiter = WebDriverWait(self.driver, timeout)
         self.username = username
@@ -60,14 +89,15 @@ class Acfun(object):
             self.wait()
 
     def wait(self, multiplier=1):
-        seconds = multiplier * (5 if __debug__ else 10)
+        seconds = multiplier * get_wait_intervals()
         sleep(seconds)
         # self.driver.implicitly_wait(seconds)
 
     def login(self):
         logger.info('Start to login with %s', self.username)
         self.driver.get('https://www.acfun.cn/login/')
-        self.driver.find_element_by_id('login-switch').click()
+        self.wait(5)
+        self.driver.find_element_by_id('login-account-switch').click()
 
         logger.info('Switching to the username/password mode')
         user_element = self.driver.find_element_by_id('ipt-account-login')
@@ -90,11 +120,11 @@ class Acfun(object):
     def check_login(self):
         logger.info('Checking user login status')
         self.driver.get('https://www.acfun.cn/member/')
-        self.wait()
+        self.wait(5)
 
         title = self.driver.title
         logger.debug('Title: %s', title)
-        result = u'登录' not in self.driver.title
+        result = u'欢迎' in title or u'用户中心' in title
         logger.info('Login status: %s' % ('yes' if result else 'no'))
         return result
 
@@ -182,7 +212,9 @@ class Acfun(object):
         start_time = datetime.now()
 
         while True:
-            if (datetime.now() - start_time).days > 1:
+            duration = (datetime.now() - start_time).total_seconds()
+
+            if duration > 12 * 3600:
                 logger.error('The upload operation time out!')
                 break # timeout
 
@@ -287,5 +319,14 @@ class Acfun(object):
         return False
 
     def __del__(self):
-        self.driver.quit()
-        logger.info('Bye!')
+        try:
+            if getattr(self, 'driver', None):
+                self.driver.close()
+                self.driver.quit()
+
+            if getattr(self, 'display', None):
+                self.display.stop()
+        except:
+            pass
+        finally:
+            logger.info('Bye!')

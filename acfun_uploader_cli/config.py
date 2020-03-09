@@ -13,6 +13,7 @@ COOKIE_FILE = join(_root, 'cookies')
 CHANNEL_FILE = join(_root, 'channels')
 DATABASE_FILE = join(_root, 'data.sqlite3')
 
+_SECTION_GENERAL = 'GENERAL'
 _SECTION_USER = 'USER'
 
 def _load_config():
@@ -24,6 +25,11 @@ def _load_config():
         if exists(CONFIG_FILE):
             _config.read(CONFIG_FILE)
         else:
+            _config.add_section(_SECTION_GENERAL)
+            _config.set(_SECTION_GENERAL, 'virtual-display', '0')
+            _config.set(_SECTION_GENERAL, 'wait-intervals', '5')
+            _config.set(_SECTION_GENERAL, 'timeout', '60')
+
             _config.add_section(_SECTION_USER)
             _config.set(_SECTION_USER, 'username', '')
             _config.set(_SECTION_USER, 'password', '')
@@ -48,6 +54,15 @@ def get_raw_config():
     output += 'PATH: %s' % CONFIG_FILE
 
     return output
+
+def should_use_virtual_display():
+    return _load_config().get(_SECTION_GENERAL, 'virtual-display') != '0'
+
+def get_wait_intervals():
+    return int(_load_config().get(_SECTION_GENERAL, 'wait-intervals'))
+
+def get_timeout_intervals():
+    return int(_load_config().get(_SECTION_GENERAL, 'timeout'))
 
 def get_userinfo():
     config = _load_config()

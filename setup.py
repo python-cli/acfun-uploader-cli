@@ -26,6 +26,7 @@ setup(
         'configparser>=4.0.2',
         'requests>=2.22.0',
         'selenium>=3.141.0',
+        'pyvirtualdisplay',
     ],
     include_package_data=True,
     zip_safe=False
