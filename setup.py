@@ -25,7 +25,7 @@ setup(
     install_requires=[
         'configparser>=4.0.2',
         'requests>=2.22.0',
-        'selenium>=3.141.0',
+        'selenium>=4.0.0a3',
         'pyvirtualdisplay',
     ],
     include_package_data=True,
