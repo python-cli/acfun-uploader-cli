@@ -78,10 +78,12 @@ class Acfun(object):
         if use_cookie and os.path.exists(COOKIE_FILE):
             with open(COOKIE_FILE, 'rb') as f:
                 for cookie in pickle.load(f):
-                    # Remove the invalid `expiry` key.
-                    # https://stackoverflow.com/a/57122470/1677041
                     if 'expiry' in cookie:
-                        del cookie['expiry']
+                        # https://stackoverflow.com/a/57122470/1677041
+                        # del cookie['expiry']
+
+                        # https://stackoverflow.com/a/60193504/1677041
+                        cookie['expiry'] = int(cookie['expiry'])
 
                     self.driver.add_cookie(cookie)
 
