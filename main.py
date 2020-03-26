@@ -77,17 +77,18 @@ def main():
         logger.warning('Invalid user info for login.')
         return
 
+    project_dir = os.path.dirname(os.path.abspath(__file__))
     acer = Acfun(username, password, headless=False)
 
     acer.check_login() or acer.login()
     acer.upload_video(
         title='acfun video poster',
-        cover=os.path.expanduser('~/Desktop/test/demo-videos/demo-0001.png'),
+        cover=os.path.join(project_dir, 'sample-data', 'cover.png'),
         channel=u'生活',
         sub_channel=u'生活日常',
         tags=['a', 'b'],
         descriptions='balabala...',
-        video=os.path.expanduser('~/Desktop/test/demo-videos/a.mp4')
+        video=os.path.join(project_dir, 'sample-data', 'main.mp4')
     )
 
 if __name__ == '__main__':

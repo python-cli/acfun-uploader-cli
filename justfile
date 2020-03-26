@@ -1,3 +1,6 @@
+remote := "aliyun"
+remote_path := "~/projects/acfun-uploader-cli"
+
 help:
     @echo "This cli tool is used for uploading videos to acfun site."
 
@@ -7,4 +10,4 @@ run:
 
 # publish project to remote gcp instance not including git and log files
 publish:
-    rsync -arv --delete --exclude .git --exclude '*.log*' . rpi:~/Documents/projects/acfun-uploader-cli
+    rsync -arv --delete --exclude .git --exclude '*.log*' . {{remote}}:{{remote_path}}
