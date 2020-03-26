@@ -99,17 +99,17 @@ class Acfun(object):
         logger.info('Start to login with %s', self.username)
         self.driver.get('https://www.acfun.cn/login/')
         self.wait(5)
-        self.driver.find_element_by_id('login-account-switch').click()
+        self.driver.find_element(By.ID, 'login-account-switch').click()
 
         logger.info('Switching to the username/password mode')
-        user_element = self.driver.find_element_by_id('ipt-account-login')
+        user_element = self.driver.find_element(By.ID, 'ipt-account-login')
         user_element.clear()
         user_element.send_keys(self.username)
-        password_element = self.driver.find_element_by_id('ipt-pwd-login')
+        password_element = self.driver.find_element(By.ID, 'ipt-pwd-login')
         password_element.clear()
         password_element.send_keys(self.password)
 
-        self.driver.find_element_by_class_name('btn-login').click()
+        self.driver.find_element(By.CLASS_NAME, 'btn-login').click()
         self.waiter.until_not(EC.presence_of_element_located((By.ID, 'login')))
 
         self.check_login()
@@ -145,23 +145,23 @@ class Acfun(object):
         title_element.send_keys(title)
 
         logger.info('Select the video source type')
-        self.driver.find_element_by_css_selector('#uploadVideo > div.up-info.fl > div.up-detail > div.up-type.must > label:nth-child(6)').click()
+        self.driver.find_element(By.CSS_SELECTOR, '#uploadVideo > div.up-info.fl > div.up-detail > div.up-type.must > label:nth-child(6)').click()
 
         logger.info('Upload video cover: %s', cover)
         self.wait()
-        self.driver.find_element_by_css_selector('#up-pic > img').click()
+        self.driver.find_element(By.CSS_SELECTOR, '#up-pic > img').click()
         self.wait()
         cover_element = self.waiter.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filePicker > div:nth-child(2) > input')))
         cover_element.send_keys(cover)
         self.wait()
-        self.driver.find_element_by_id('uploadOk').click()
+        self.driver.find_element(By.ID, 'uploadOk').click()
 
         logger.info('Select the channel: [%s] - [%s]', channel, sub_channel)
         channel_element = self.waiter.until(EC.visibility_of_element_located((By.NAME, 'channel')))
         self.wait()
-        # channel_element = self.driver.find_element_by_name('channel').click()
+        # channel_element = self.driver.find_element(By.NAME, 'channel').click()
         Select(channel_element).select_by_visible_text(channel)
-        subject_element = self.driver.find_element_by_name('subject')
+        subject_element = self.driver.find_element(By.NAME, 'subject')
         self.wait()
         Select(subject_element).select_by_visible_text(sub_channel)
 
@@ -180,24 +180,24 @@ class Acfun(object):
         tagator.send_keys(Keys.ESCAPE)
 
         logger.info('Input the descriptions')
-        self.driver.find_element_by_xpath('//*[@id="up-descr"]').send_keys(descriptions)
+        self.driver.find_element(By.XPATH, '//*[@id="up-descr"]').send_keys(descriptions)
 
         self.wait(2)
         logger.info('Uploading video file: %s', video)
-        self.driver.find_element_by_name('file').send_keys(video)
+        self.driver.find_element(By.NAME, 'file').send_keys(video)
 
         # self.wait(2)
         # logger.info('Check the auto-publish switcher')
-        # self.driver.find_element_by_css_selector('#uploadVideo > div.dividers.pos-rel > div > label').click()
+        # self.driver.find_element(By.CSS_SELECTOR, '#uploadVideo > div.dividers.pos-rel > div > label').click()
 
         result = self._wait_upload_completed()
         self.wait(5)
 
         if result:
             self.wait()
-            self.driver.find_element_by_xpath('//input[@class="ptitles fl"]').send_keys('p1')
+            self.driver.find_element(By.XPATH, '//input[@class="ptitles fl"]').send_keys('p1')
             self.wait(2)
-            self.driver.find_element_by_id("up-submit").click()
+            self.driver.find_element(By.ID, "up-submit").click()
 
         if result:
             logger.info('Upload video file [%s] successfully.', video)
@@ -254,7 +254,7 @@ class Acfun(object):
         result, progress = False, None
 
         try:
-            progress_span = self.driver.find_element_by_xpath('//div[@class="pbox"]/div/span[@class="ptime"]')
+            progress_span = self.driver.find_element(By.XPATH, '//div[@class="pbox"]/div/span[@class="ptime"]')
 
             if progress_span:
                 progress_text = progress_span.text
@@ -278,7 +278,7 @@ class Acfun(object):
         text = None
 
         try:
-            info_element = self.driver.find_element_by_xpath('//*[@id="area-info"]/div')
+            info_element = self.driver.find_element(By.XPATH, '//*[@id="area-info"]/div')
 
             if info_element:
                 text = info_element.text
@@ -300,7 +300,7 @@ class Acfun(object):
     def _check_upload_status(self):
         # Signal 1:
         try:
-            success_div = self.driver.find_element_by_xpath('//*[@id="videoSuccess"]')
+            success_div = self.driver.find_element(By.XPATH, '//*[@id="videoSuccess"]')
             if success_div.is_displayed():
                 logger.info('Switch to the video success layer.')
                 return True
