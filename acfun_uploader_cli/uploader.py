@@ -96,7 +96,7 @@ class Acfun(object):
         # self.driver.implicitly_wait(seconds)
 
     def login(self):
-        logger.info('Start to login with %s', self.username)
+        logger.info('Starting to login')
         self.driver.get('https://www.acfun.cn/login/')
         self.wait(5)
         self.driver.find_element(By.ID, 'login-account-switch').click()
