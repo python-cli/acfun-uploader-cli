@@ -92,7 +92,10 @@ class Acfun(object):
 
     def wait(self, multiplier=1):
         seconds = multiplier * get_wait_intervals()
+
+        logger.debug('waiting %ld second(s)' % seconds)
         sleep(seconds)
+        logger.debug('waiting done')
         # self.driver.implicitly_wait(seconds)
 
     def login(self):
@@ -149,20 +152,25 @@ class Acfun(object):
 
         logger.info('Upload video cover: %s', cover)
         self.wait()
+        logger.debug('Locating the cover uploader control')
         self.driver.find_element(By.CSS_SELECTOR, '#up-pic > img').click()
         self.wait()
+        logger.debug('Sending the cover file to input field')
         cover_element = self.waiter.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filePicker > div:nth-child(2) > input')))
         cover_element.send_keys(cover)
         self.wait()
+        logger.debug('Confirm to finished the cover uploading')
         self.driver.find_element(By.ID, 'uploadOk').click()
 
         logger.info('Select the channel: [%s] - [%s]', channel, sub_channel)
         channel_element = self.waiter.until(EC.visibility_of_element_located((By.NAME, 'channel')))
         self.wait()
+        logger.debug('Locating the main channel')
         # channel_element = self.driver.find_element(By.NAME, 'channel').click()
         Select(channel_element).select_by_visible_text(channel)
         subject_element = self.driver.find_element(By.NAME, 'subject')
         self.wait()
+        logger.debug('Locating the sub channnel')
         Select(subject_element).select_by_visible_text(sub_channel)
 
         logger.info('Input the tags')
@@ -195,8 +203,10 @@ class Acfun(object):
 
         if result:
             self.wait()
+            logger.debug('Filling the video file title')
             self.driver.find_element(By.XPATH, '//input[@class="ptitles fl"]').send_keys('p1')
             self.wait(2)
+            logger.debug('Confirm to post the video')
             self.driver.find_element(By.ID, "up-submit").click()
 
         if result:
