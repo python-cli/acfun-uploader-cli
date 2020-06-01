@@ -158,9 +158,12 @@ class Acfun(object):
         logger.debug('Sending the cover file to input field')
         cover_element = self.waiter.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filePicker > div:nth-child(2) > input')))
         cover_element.send_keys(cover)
-        self.wait()
+        self.wait(5)
         logger.debug('Confirm to finished the cover uploading')
         self.driver.find_element(By.ID, 'uploadOk').click()
+
+        if not self._wait_cover_upload_completed():
+            logger.debug('Upload cover file failed!')
 
         logger.info('Select the channel: [%s] - [%s]', channel, sub_channel)
         channel_element = self.waiter.until(EC.visibility_of_element_located((By.NAME, 'channel')))
@@ -198,7 +201,7 @@ class Acfun(object):
         # logger.info('Check the auto-publish switcher')
         # self.driver.find_element(By.CSS_SELECTOR, '#uploadVideo > div.dividers.pos-rel > div > label').click()
 
-        result = self._wait_upload_completed()
+        result = self._wait_video_upload_completed()
         self.wait(5)
 
         if result:
@@ -216,8 +219,35 @@ class Acfun(object):
 
         return result
 
-    def _wait_upload_completed(self):
-        logger.info('Waiting for the upload progress completed')
+    def _wait_cover_upload_completed(self):
+        logger.info('Waiting for the cover upload progress completed')
+
+        result = False
+        last_info_text, last_progress = None, None
+        start_time = datetime.now()
+
+        while True:
+            duration = (datetime.now() - start_time).total_seconds()
+
+            if duration > 3600:
+                logger.error('The upload operation time out!')
+                break # timeout
+
+            text = self._check_notification()
+
+            if text and last_info_text != text:
+                last_info_text = text
+                logger.info('Received notification: %s', text)
+
+            if text and u'上传完毕' in text:
+                result = True
+                logger.debug('The uploads should be completed since success notification was received.')
+                break
+
+        return result
+
+    def _wait_video_upload_completed(self):
+        logger.info('Waiting for the video upload progress completed')
 
         result = False
         last_info_text, last_progress = None, None
@@ -242,7 +272,8 @@ class Acfun(object):
                     logger.debug('The uploads should be completed since the progress bar finished.')
                     break
 
-            res, text = self._check_notification()
+            text = self._check_notification()
+            res = text and u'成功' in text
 
             if text and last_info_text != text:
                 last_info_text = text
@@ -251,11 +282,6 @@ class Acfun(object):
             if res:
                 result = True
                 logger.debug('The uploads should be completed since success notification was received.')
-                break
-
-            if self._check_upload_status():
-                logger.debug('The uploads should be completed since it navigates to success page.')
-                result = True
                 break
 
         return result
@@ -292,20 +318,12 @@ class Acfun(object):
 
             if info_element:
                 text = info_element.text
-
-                if len(text) > 0:
-                    if u'投稿失败' in text:
-                        return False
-                    elif u'成功' in text:
-                        return True
-                else:
-                    text = None
         except NoSuchElementException as e:
             pass
         except StaleElementReferenceException as e:
             pass
 
-        return None, text
+        return text
 
     def _check_upload_status(self):
         # Signal 1:
