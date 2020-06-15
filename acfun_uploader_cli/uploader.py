@@ -10,6 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
@@ -25,6 +26,18 @@ from pyvirtualdisplay import Display
 from .config import *
 
 logger = logging.getLogger(__name__)
+
+# Suppress all the exceptions from this method.
+original_send_keys = WebElement.send_keys
+
+def safe_send_keys(self, *value):
+    try:
+        original_send_keys(self, *value)
+    except:
+        pass
+
+WebElement.send_keys = safe_send_keys
+
 
 class Acfun(object):
 
