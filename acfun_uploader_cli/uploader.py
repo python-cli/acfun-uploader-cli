@@ -48,7 +48,10 @@ class Acfun(object):
             self.display = Display(visible=0, size=(1024, 768))
             self.display.start()
 
-        executable = find_executable('chromedriver')
+        # Disable the chrome driver support because of this:
+        # https://stackoverflow.com/q/67699765/1677041
+        # executable = find_executable('chromedriver')
+        executable = False
 
         if executable:
             # https://stackoverflow.com/a/53970825/1677041
