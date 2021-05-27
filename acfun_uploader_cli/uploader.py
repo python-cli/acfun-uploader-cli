@@ -142,7 +142,7 @@ class Acfun(object):
 
         title = self.driver.title
         logger.debug('Title: %s', title)
-        result = u'欢迎' in title or u'用户中心' in title
+        result = u'个人中心' in title
         logger.info('Login status: %s' % ('yes' if result else 'no'))
         return result
 
@@ -152,47 +152,51 @@ class Acfun(object):
         logger.info('Start to upload video')
         self.wait()
 
-        self.driver.get('https://www.acfun.cn/member/#area=upload-video')
+        self.driver.get('https://member.acfun.cn/upload-video')
         self.wait(5)
 
         logger.info('Fill video title: %s', title)
-        title_element = self.waiter.until(EC.presence_of_element_located((By.ID, 'title')))
+        title_element = self.waiter.until(EC.presence_of_element_located((By.XPATH, '//div[@class="video-select-container video-select-title fl"]/div/div/div/textarea')))
         title_element.clear()
         title_element.send_keys(title)
 
         logger.info('Select the video source type')
-        self.driver.find_element(By.CSS_SELECTOR, '#uploadVideo > div.up-info.fl > div.up-detail > div.up-type.must > label:nth-child(6)').click()
+        self.driver.find_element(By.XPATH, '//div[@class="video-select-container fl"]/div/div/div/label/span/input').click()
 
         logger.info('Upload video cover: %s', cover)
         self.wait()
-        logger.debug('Locating the cover uploader control')
-        self.driver.find_element(By.CSS_SELECTOR, '#up-pic > img').click()
-        self.wait()
         logger.debug('Sending the cover file to input field')
-        cover_element = self.waiter.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filePicker > div:nth-child(2) > input')))
+        cover_element = self.driver.find_element(By.XPATH, '//div[@class="video-cover-tool fl"]/div/div/input')
         cover_element.send_keys(cover)
         self.wait(5)
         logger.debug('Confirm to finished the cover uploading')
-        self.driver.find_element(By.ID, 'uploadOk').click()
-
-        if not self._wait_cover_upload_completed():
-            logger.debug('Upload cover file failed!')
+        self.driver.find_element(By.XPATH, '//div[@class="ivu-modal-footer"]/div/button').click()
+        self.wait(5)
 
         logger.info('Select the channel: [%s] - [%s]', channel, sub_channel)
-        channel_element = self.waiter.until(EC.visibility_of_element_located((By.NAME, 'channel')))
+
+        self.waiter.until(EC.element_to_be_clickable((By.XPATH, '//div[@class="el-cascader video-channel-area"]'))).click()
+
         self.wait()
+        # Wait for the dropdown menu list to show
+        self.waiter.until(EC.visibility_of_element_located((By.XPATH, f'//div[@class="el-popper el-cascader__dropdown"]')))
+
         logger.debug('Locating the main channel')
-        # channel_element = self.driver.find_element(By.NAME, 'channel').click()
-        Select(channel_element).select_by_visible_text(channel)
-        subject_element = self.driver.find_element(By.NAME, 'subject')
+
+        channel_element = self.waiter.until(EC.element_to_be_clickable((By.XPATH, f'//div[@class="el-cascader-panel"]//ul/li[./span/span[text()="{channel}"]]')))
+
+        webdriver.ActionChains(self.driver).move_to_element(channel_element).click().perform()
         self.wait()
-        logger.debug('Locating the sub channnel')
-        Select(subject_element).select_by_visible_text(sub_channel)
+
+        logger.debug('Locating the sub channel')
+
+        sub_channel_element = self.waiter.until(EC.presence_of_element_located((By.XPATH, f'//div[@class="el-cascader-panel"]/div[@class="el-scrollbar el-cascader-menu"]//li[./span/span[text()="{sub_channel}"]]')))
+        sub_channel_element.click()
 
         logger.info('Input the tags')
-        tagator = self.waiter.until(EC.presence_of_element_located((By.XPATH, '//div[@id="tagator_inputTagator"]/input')))
-        # tagator.click()
-        self.driver.execute_script("arguments[0].click();", tagator)
+
+        tagator = self.driver.find_element(By.XPATH, '//div[@class="video-select-container fl"]//input[@class="video-input-box-val"]')
+        tagator.click()
 
         for i in range(min(4, len(tags))):
             tag = tags[i]
@@ -203,16 +207,15 @@ class Acfun(object):
 
         tagator.send_keys(Keys.ESCAPE)
 
-        logger.info('Input the descriptions')
-        self.driver.find_element(By.XPATH, '//*[@id="up-descr"]').send_keys(descriptions)
+        logger.info('Input the video descriptions')
+        self.driver.find_element(By.XPATH, '//div[@class="video-info-container clearfix" and ./div/h3[text()="简介"]]//textarea').send_keys(descriptions)
 
+        logger.info('Input the fans descriptions')
+        self.driver.find_element(By.XPATH, '//div[@class="video-info-container clearfix" and ./div/h3[text()="粉丝动态"]]//textarea').send_keys(descriptions)
         self.wait(2)
-        logger.info('Uploading video file: %s', video)
-        self.driver.find_element(By.NAME, 'file').send_keys(video)
 
-        # self.wait(2)
-        # logger.info('Check the auto-publish switcher')
-        # self.driver.find_element(By.CSS_SELECTOR, '#uploadVideo > div.dividers.pos-rel > div > label').click()
+        logger.info('Uploading video file: %s', video)
+        self.driver.find_element(By.XPATH, '//div[@class="upload-video-file fr"]//input[@type="file" and @name="file"]').send_keys(video)
 
         result = self._wait_video_upload_completed()
         self.wait(5)
@@ -220,42 +223,15 @@ class Acfun(object):
         if result:
             self.wait()
             logger.debug('Filling the video file title')
-            self.driver.find_element(By.XPATH, '//input[@class="ptitles fl"]').send_keys('p1')
+            self.driver.find_element(By.XPATH, '//div[@class="video-upload-list"]//input').send_keys('p1')
             self.wait(2)
             logger.debug('Confirm to post the video')
-            self.driver.find_element(By.ID, "up-submit").click()
+            self.driver.find_element(By.XPATH, '//div[@class="video-submit-container fl"]/button').click()
 
         if result:
             logger.info('Upload video file [%s] successfully.', video)
         else:
             logger.error('Upload video file [%s] failed.', video)
-
-        return result
-
-    def _wait_cover_upload_completed(self):
-        logger.info('Waiting for the cover upload progress completed')
-
-        result = False
-        last_info_text, last_progress = None, None
-        start_time = datetime.now()
-
-        while True:
-            duration = (datetime.now() - start_time).total_seconds()
-
-            if duration > 3600:
-                logger.error('The upload operation time out!')
-                break # timeout
-
-            text = self._check_notification()
-
-            if text and last_info_text != text:
-                last_info_text = text
-                logger.info('Received notification: %s', text)
-
-            if text and u'上传完毕' in text:
-                result = True
-                logger.debug('The uploads should be completed since success notification was received.')
-                break
 
         return result
 
@@ -274,28 +250,15 @@ class Acfun(object):
                 break # timeout
 
             if not result:
-                res, progress = self._check_progress()
+                result, progress = self._check_progress()
 
                 if progress and last_progress != progress:
                     last_progress = progress
                     logger.info('progress: %s' % progress)
 
-                if res:
-                    result = True
+                if result:
                     logger.debug('The uploads should be completed since the progress bar finished.')
                     break
-
-            text = self._check_notification()
-            res = text and u'成功' in text
-
-            if text and last_info_text != text:
-                last_info_text = text
-                logger.info('Received notification: %s', text)
-
-            if res:
-                result = True
-                logger.debug('The uploads should be completed since success notification was received.')
-                break
 
         return result
 
@@ -303,11 +266,11 @@ class Acfun(object):
         result, progress = False, None
 
         try:
-            progress_span = self.driver.find_element(By.XPATH, '//div[@class="pbox"]/div/span[@class="ptime"]')
+            progress_span = self.driver.find_element(By.XPATH, '//div[@class="video-upload-list"]//span[@class="video-upload-item-status"]')
 
             if progress_span:
                 progress_text = progress_span.text
-                result = progress_text == '100%'
+                result = progress_text == '上传完成'
 
                 if len(progress_text) > 0:
                     progress = progress_text
@@ -317,49 +280,6 @@ class Acfun(object):
             pass
 
         return result, progress
-
-    def _check_notification(self):
-        '''
-        print and check the notification info.
-
-        return True if received upload succeed notification, False if upload failed notification, None if none of signal be found.
-        '''
-        text = None
-
-        try:
-            info_element = self.driver.find_element(By.XPATH, '//*[@id="area-info"]/div')
-
-            if info_element:
-                text = info_element.text
-        except NoSuchElementException as e:
-            pass
-        except StaleElementReferenceException as e:
-            pass
-
-        return text
-
-    def _check_upload_status(self):
-        # Signal 1:
-        try:
-            success_div = self.driver.find_element(By.XPATH, '//*[@id="videoSuccess"]')
-            if success_div.is_displayed():
-                logger.info('Switch to the video success layer.')
-                return True
-        except NoSuchElementException as e:
-            pass
-
-        # Signal 2:
-        current_url = self.driver.current_url
-
-        if '#area=video-success' in current_url:
-            logger.info('Page navigated to %s!', current_url)
-            return True
-        elif '#area=upload-video' not in current_url:
-            logger.warning('Page navigated to %s!', current_url)
-            # Undefined result!
-
-        # self.wait()
-        return False
 
     def __del__(self):
         try:
