@@ -10,4 +10,4 @@ run:
 
 # publish project to remote gcp instance not including git and log files
 publish:
-    rsync -arv --delete --exclude .git --exclude '*.log*' . {{remote}}:{{remote_path}}
+    rsync -arv --delete --exclude .git --exclude '*.log*' --exclude '*.pyc'  --exclude '__pycache__' . {{remote}}:{{remote_path}}

@@ -45,6 +45,7 @@ class Acfun(object):
         super().__init__()
 
         if should_use_virtual_display():
+            logger.info('Initialize a virtual display')
             self.display = Display(visible=0, size=(1024, 768))
             self.display.start()
 
@@ -54,6 +55,8 @@ class Acfun(object):
         executable = False
 
         if executable:
+            logger.info('Initialize chrome driver')
+
             # https://stackoverflow.com/a/53970825/1677041
             chrome_options = Options()
             headless and chrome_options.add_argument('--headless')
@@ -62,8 +65,16 @@ class Acfun(object):
 
             self.driver = webdriver.Chrome(executable, options=chrome_options)
         else:
+            logger.info('Initialize firefox with geckodriver')
+
             ff_entry = find_executable('firefox-esr')
             executable = find_executable('geckodriver')
+
+            if ff_entry is None:
+                logger.error('firefox is not install!')
+
+            if executable is None:
+                logger.error('geckodriver is not installed!')
 
             firefox_options = FFOptions()
             firefox_options.add_argument('--headless')
@@ -77,7 +88,7 @@ class Acfun(object):
             self.driver = webdriver.Firefox(executable_path=executable, firefox_options=firefox_options, firefox_binary=binary, capabilities=cap)
 
         if self.driver is None:
-            logger.error('chromedriver is required!\n'
+            logger.error('chromedriver or firefox/geckodriver is required!\n'
             'Go to install it first and make sure it could be found in your $PATH.')
             return
 
