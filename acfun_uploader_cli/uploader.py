@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import NoAlertPresentException
+from selenium.common.exceptions import WebDriverException
 
 from selenium.webdriver.firefox.options import Options as FFOptions
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
@@ -286,8 +286,10 @@ class Acfun(object):
                 progress_text = progress_span.text
                 result = progress_text == '上传完成'
 
-                if len(progress_text) > 0:
+                if progress_text and len(progress_text) > 0:
                     progress = progress_text
+        except WebDriverException as e:
+            logger.exception(f'Found a webdriver exception when checking progress: {e}')
         except NoSuchElementException as e:
             pass
         except StaleElementReferenceException as e:
