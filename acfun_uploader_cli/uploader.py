@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import InvalidSessionIdException
 
 from selenium.webdriver.firefox.options import Options as FFOptions
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
@@ -264,36 +264,35 @@ class Acfun(object):
                 break # timeout
 
             if not result:
-                result, progress = self._check_progress()
+                try:
+                    result, progress = self._check_progress()
 
-                if progress and last_progress != progress:
-                    last_progress = progress
-                    logger.info('progress: %s' % progress)
+                    if progress and last_progress != progress:
+                        last_progress = progress
+                        logger.info('progress: %s' % progress)
 
-                if result:
-                    logger.debug('The uploads should be completed since the progress bar finished.')
-                    break
+                    if result:
+                        logger.debug('The uploads should be completed since the progress bar finished.')
+                        break
+                except InvalidSessionIdException as e:
+                    logger.exception(f'Found a webdriver exception when checking progress: {e}')
+                    return False
+                except (NoSuchElementException, StaleElementReferenceException) as e:
+                    logger.exception(e)
 
         return result
 
     def _check_progress(self):
         result, progress = False, None
 
-        try:
-            progress_span = self.driver.find_element(By.XPATH, '//div[@class="video-upload-list"]//span[@class="video-upload-item-status"]')
+        progress_span = self.driver.find_element(By.XPATH, '//div[@class="video-upload-list"]//span[@class="video-upload-item-status"]')
 
-            if progress_span:
-                progress_text = progress_span.text
-                result = progress_text == '上传完成'
+        if progress_span:
+            progress_text = progress_span.text
+            result = progress_text == '上传完成'
 
-                if progress_text and len(progress_text) > 0:
-                    progress = progress_text
-        except WebDriverException as e:
-            logger.exception(f'Found a webdriver exception when checking progress: {e}')
-        except NoSuchElementException as e:
-            pass
-        except StaleElementReferenceException as e:
-            pass
+            if progress_text and len(progress_text) > 0:
+                progress = progress_text
 
         return result, progress
 
